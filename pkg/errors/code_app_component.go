@@ -378,6 +378,32 @@ var CodeTree = []AppInfo{
 			},
 		},
 	},
+	{
+		Value:       15, // Max 4-bit value (0xF)
+		Name:        "max",
+		Description: "Maximum value example app",
+		Components: []ComponentInfo{
+			{
+				Value:       63, // Max 6-bit value (0x3F)
+				Name:        "max_component",
+				Description: "Maximum value component",
+				SubComponents: []SubComponentInfo{
+					{
+						Value:       63, // Max 6-bit value (0x3F)
+						Name:        "max_subcomponent",
+						Description: "Maximum value sub-component",
+						ErrorTypes: []ErrorInfo{
+							{
+								Value:       255, // Max 8-bit value (0xFF)
+								Name:        "max_error",
+								Description: "Maximum possible error code value",
+							},
+						},
+					},
+				},
+			},
+		},
+	},
 }
 
 func (AppComponentErrorCode) GetType() CodeType {

@@ -12,6 +12,35 @@ All error codes follow the format: E<type><data> where:
 Base-36 encoding uses digits 0-9 and letters A-Z to pack more information into fewer characters while remaining human-readable.
 
 
+## Tiny Format
+
+Simplest possible error code format using just an error type value.
+
+The format provides:
+- Values from 0 to 1295 (00 to ZZ in base-36)
+- Total of 1,296 possible unique error codes
+
+The code is encoded as E0XX where:
+- E: Fixed prefix
+- 0: Fixed type identifier
+- XX: Two base-36 characters encoding the error type (00-ZZ)
+
+Examples:
+- E000: Unknown error
+- E001: Validation error
+- E0ZZ: Maximum value (1295)
+
+| Code | Type | Description | 
+|----|----|----|
+| E000 | unknown | Unknown error | 
+| E001 | validation | Validation error | 
+| E002 | not_found | Resource not found | 
+| E003 | unauthorized | Unauthorized access | 
+| E004 | bad_request | Bad request | 
+| E0ZZ | max | Maximum error value (ZZ) | 
+
+
+
 ## Simple Format
 
 Each error code is composed of two bytes encoded as follows:
@@ -48,6 +77,41 @@ E: ErrorType bits
 
 
 
+## Simple 5-11 Format
+
+Each error code is composed of 16 bits encoded as follows:
+- Class (5 bits): Identifies the error class (allows up to 32 distinct classes)
+- ErrorType (11 bits): Identifies the specific error (allows up to 2048 errors per class)
+
+The format provides:
+- Up to 32 different classes
+- Up to 2048 different error types per class
+- Total of 65,536 possible unique error codes
+
+The code is encoded as E<type><data> where:
+- E: Fixed prefix
+- type: 1 character in base-36 encoding the error type
+- data: 4 characters in base-36 encoding the class and error type bits
+
+Bit layout before encoding:
+```
+[CCCCCEEE][EEEEEEEE]
+C: Class bits (5)
+E: ErrorType bits (11)
+```
+
+| Code | Class.Type | Description | 
+|----|----|----|
+| E30000 | unknown.unknown | Unknown error | 
+| E301KW | http.unknown | Unknown HTTP error | 
+| E301KX | http.bad_request | Bad request error (400) | 
+| E301KY | http.unauthorized | Unauthorized error (401) | 
+| E301KZ | http.forbidden | Forbidden error (403) | 
+| E301L0 | http.not_found | Not found error (404) | 
+| E31EKF | max.max | Maximum error type value | 
+
+
+
 ## App Component Format
 
 Each error code is composed of 24 bits of data encoded as follows:
@@ -79,35 +143,36 @@ E: ErrorType bits
 
 | Code | App.Component.SubComponent.Type | Description | 
 |----|----|----|
-| E20MTQ8 | backend.handler.unknown.unknown | Unknown handler error | 
-| E20MTXD | backend.handler.users.validation_error | Input validation failed for user operation | 
-| E20MTXE | backend.handler.users.authorization_error | User lacks required permissions for operation | 
-| E20MU4H | backend.handler.records.validation_error | Input validation failed for record operation | 
-| E20MU4I | backend.handler.records.authorization_error | User lacks required permissions for record operation | 
-| E20MUBL | backend.handler.analytics.validation_error | Input validation failed for analytics operation | 
-| E20MUBM | backend.handler.analytics.authorization_error | User lacks required permissions for analytics operation | 
-| E20N6DC | backend.job.unknown.unknown | Unknown job error | 
-| E20N6KH | backend.job.sync.database_error | Database operation failed during sync | 
-| E20N6KI | backend.job.sync.external_api_error | External API call failed during sync | 
-| E20N6KJ | backend.job.sync.timeout | Operation timed out during sync | 
-| E20N6RL | backend.job.analytics.database_error | Database operation failed during analytics processing | 
-| E20N6RM | backend.job.analytics.external_api_error | External API call failed during analytics processing | 
-| E20N6RN | backend.job.analytics.timeout | Operation timed out during analytics processing | 
-| E219ATC | frontend.ui.unknown.unknown | Unknown UI error | 
-| E219B0H | frontend.ui.forms.validation_error | Form validation failed | 
-| E219B0I | frontend.ui.forms.submission_error | Form submission failed | 
-| E219B7L | frontend.ui.routing.not_found | Route not found | 
-| E219B7M | frontend.ui.routing.unauthorized | Route access unauthorized | 
-| E219NGG | frontend.state.unknown.unknown | Unknown state error | 
-| E219NNL | frontend.state.store.update_failed | State update operation failed | 
-| E219NNM | frontend.state.store.invalid_action | Invalid state action dispatched | 
-| E219NUP | frontend.state.persistence.storage_error | Local storage operation failed | 
-| E219NUQ | frontend.state.persistence.sync_error | State synchronization failed | 
-| E21A03K | frontend.api.unknown.unknown | Unknown API error | 
-| E21A0AP | frontend.api.request.network_error | Network request failed | 
-| E21A0AQ | frontend.api.request.timeout | Request timed out | 
-| E21A0AR | frontend.api.request.invalid_response | Invalid response received | 
-| E21A0HT | frontend.api.cache.cache_miss | Cache miss error | 
-| E21A0HU | frontend.api.cache.cache_invalid | Cache invalidation error | 
+| EA0MTQ8 | backend.handler.unknown.unknown | Unknown handler error | 
+| EA0MTXD | backend.handler.users.validation_error | Input validation failed for user operation | 
+| EA0MTXE | backend.handler.users.authorization_error | User lacks required permissions for operation | 
+| EA0MU4H | backend.handler.records.validation_error | Input validation failed for record operation | 
+| EA0MU4I | backend.handler.records.authorization_error | User lacks required permissions for record operation | 
+| EA0MUBL | backend.handler.analytics.validation_error | Input validation failed for analytics operation | 
+| EA0MUBM | backend.handler.analytics.authorization_error | User lacks required permissions for analytics operation | 
+| EA0N6DC | backend.job.unknown.unknown | Unknown job error | 
+| EA0N6KH | backend.job.sync.database_error | Database operation failed during sync | 
+| EA0N6KI | backend.job.sync.external_api_error | External API call failed during sync | 
+| EA0N6KJ | backend.job.sync.timeout | Operation timed out during sync | 
+| EA0N6RL | backend.job.analytics.database_error | Database operation failed during analytics processing | 
+| EA0N6RM | backend.job.analytics.external_api_error | External API call failed during analytics processing | 
+| EA0N6RN | backend.job.analytics.timeout | Operation timed out during analytics processing | 
+| EA19ATC | frontend.ui.unknown.unknown | Unknown UI error | 
+| EA19B0H | frontend.ui.forms.validation_error | Form validation failed | 
+| EA19B0I | frontend.ui.forms.submission_error | Form submission failed | 
+| EA19B7L | frontend.ui.routing.not_found | Route not found | 
+| EA19B7M | frontend.ui.routing.unauthorized | Route access unauthorized | 
+| EA19NGG | frontend.state.unknown.unknown | Unknown state error | 
+| EA19NNL | frontend.state.store.update_failed | State update operation failed | 
+| EA19NNM | frontend.state.store.invalid_action | Invalid state action dispatched | 
+| EA19NUP | frontend.state.persistence.storage_error | Local storage operation failed | 
+| EA19NUQ | frontend.state.persistence.sync_error | State synchronization failed | 
+| EA1A03K | frontend.api.unknown.unknown | Unknown API error | 
+| EA1A0AP | frontend.api.request.network_error | Network request failed | 
+| EA1A0AQ | frontend.api.request.timeout | Request timed out | 
+| EA1A0AR | frontend.api.request.invalid_response | Invalid response received | 
+| EA1A0HT | frontend.api.cache.cache_miss | Cache miss error | 
+| EA1A0HU | frontend.api.cache.cache_invalid | Cache invalidation error | 
+| EA9ZLDR | max.max_component.max_subcomponent.max_error | Maximum possible error code value | 
 
 

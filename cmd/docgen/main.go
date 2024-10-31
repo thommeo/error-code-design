@@ -52,7 +52,9 @@ func getSections() []DocSection {
 
 	// Get error types
 	errorTypes := []errors.ErrorType{
+		errors.TinyCode{},
 		errors.SimpleCode{},
+		errors.Simple511Code{},
 		errors.AppComponentErrorCode{},
 	}
 

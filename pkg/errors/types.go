@@ -4,8 +4,9 @@ package errors
 type CodeType uint16
 
 const (
+	CodeTypeTiny         CodeType = 0
 	CodeTypeSimple       CodeType = 1
-	CodeTypeAppComponent CodeType = 2
+	CodeTypeAppComponent CodeType = 10
 )
 
 type FieldInfo struct {
