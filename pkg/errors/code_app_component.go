@@ -384,42 +384,40 @@ func (AppComponentErrorCode) GetType() CodeType {
 	return CodeTypeAppComponent
 }
 
-// Encode returns the byte representation of the error code
-func (e AppComponentErrorCode) Encode() []byte {
-	result := make([]byte, 4)
+func (e AppComponentErrorCode) Encode() string {
+	// Pack the bits into a 24-bit number
+	packed := uint32(e.App&0x0F)<<20 | // 4 bits App
+		uint32(e.Component&0x3F)<<14 | // 6 bits Component
+		uint32(e.SubComponent&0x3F)<<8 | // 6 bits SubComponent
+		uint32(e.ErrType&0xFF) // 8 bits ErrorType
 
-	result[0] = byte(e.GetType())
+	// Convert type and data to base36
+	typeStr := toBase36(uint32(e.GetType()), 1) // 1 char for type (0-36)
+	dataStr := toBase36(packed, 5)              // 5 chars for 24 bits of data
 
-	// Byte 1: [AAAACCCC]
-	result[1] = (byte(e.App) & 0x0F) << 4        // 4 bits for App
-	result[1] |= (byte(e.Component) >> 2) & 0x0F // Upper 4 bits of Component
-
-	// Byte 2: [CCSSSSSS]
-	result[2] = (byte(e.Component) & 0b00000011) << 6 // Lower 2 bits of Component
-	result[2] |= byte(e.SubComponent) & 0b00111111    // 6 bits for SubComponent
-
-	// Byte 3: [EEEEEEEE]
-	result[3] = byte(e.ErrType) // 8 bits for ErrorType
-
-	return result
+	return fmt.Sprintf("E%s%s", typeStr, dataStr)
 }
 
-// Decode creates an AppComponentErrorCode from a byte slice
-func DecodeAppComponentErrorCode(data []byte) (AppComponentErrorCode, error) {
-	if len(data) != 4 {
-		return AppComponentErrorCode{}, fmt.Errorf("expected 4 bytes, got %d", len(data))
+func DecodeAppComponentErrorCode(code string) (AppComponentErrorCode, error) {
+	if len(code) != 7 || code[0] != 'E' { // Format: E<type><data>
+		return AppComponentErrorCode{}, fmt.Errorf("invalid code format: %s", code)
 	}
 
-	codeType := CodeType(data[0])
-	if codeType != CodeTypeAppComponent {
-		return AppComponentErrorCode{}, fmt.Errorf("invalid code type: %d", codeType)
+	// Parse type
+	typeVal := CodeType(fromBase36(code[1:2]))
+	if typeVal != CodeTypeAppComponent {
+		return AppComponentErrorCode{}, fmt.Errorf("invalid code type: %d", typeVal)
 	}
 
+	// Parse data
+	packed := fromBase36(code[2:])
+
+	// Extract fields using bit masks
 	return AppComponentErrorCode{
-		App:          AppCode((data[1] >> 4) & 0x0F),
-		Component:    ComponentCode(((data[1] & 0x0F) << 2) | ((data[2] >> 6) & 0b00000011)),
-		SubComponent: SubComponentCode(data[2] & 0b00111111),
-		ErrType:      ErrorCode(data[3]),
+		App:          AppCode((packed >> 20) & 0x0F),         // 4 bits
+		Component:    ComponentCode((packed >> 14) & 0x3F),   // 6 bits
+		SubComponent: SubComponentCode((packed >> 8) & 0x3F), // 6 bits
+		ErrType:      ErrorCode(packed & 0xFF),               // 8 bits
 	}, nil
 }
 
@@ -457,7 +455,7 @@ func (AppComponentErrorCode) GetPrefix() string {
 func (AppComponentErrorCode) GetDocSection() DocSection {
 	return DocSection{
 		Title: "App Component Format",
-		Description: `Each error code is composed of three bytes encoded as follows:
+		Description: `Each error code is composed of 24 bits of data encoded as follows:
 - App (4 bits): Identifies the application (allows up to 16 apps)
 - Component (6 bits): Identifies the major component (allows up to 64 components per app)
 - SubComponent (6 bits): Identifies the specific sub-component (allows up to 64 sub-components per component)
@@ -470,7 +468,12 @@ The format provides:
 - Up to 256 different error types per sub-component
 - Total of 16,777,216 possible unique error codes (16 * 64 * 64 * 256)
 
-Byte layout:
+The code is encoded as E<type><data> where:
+- E: Fixed prefix
+- type: 1 base-36 character encoding the type (2)
+- data: 5 base-36 characters encoding the packed 24 bits
+
+Bit layout before encoding:
 ` + "```" + `
 [AAAACCCC][CCSSSSSS][EEEEEEEE]
 A: App bits
@@ -481,7 +484,6 @@ E: ErrorType bits
 		Headers: []string{"Code", "App.Component.SubComponent.Type", "Description"},
 	}
 }
-
 func (AppComponentErrorCode) GetFieldInfo() []FieldInfo {
 	return []FieldInfo{
 		{
@@ -511,7 +513,7 @@ func (AppComponentErrorCode) GetFieldInfo() []FieldInfo {
 	}
 }
 
-// GetPermutations returns all possible error code combinations
+// Update the GetPermutations method to use new encoding
 func (AppComponentErrorCode) GetPermutations() []Permutation {
 	var perms []Permutation
 
@@ -525,18 +527,11 @@ func (AppComponentErrorCode) GetPermutations() []Permutation {
 						SubComponent: subComp.Value,
 						ErrType:      errType.Value,
 					}
-					encoded := ace.Encode()
 
-					// Format code with all bytes needing 2 hex chars
-					code := fmt.Sprintf("%s%02X%02X%02X%02X",
-						ace.GetPrefix(),
-						encoded[0], // type byte
-						encoded[1], // first data byte  [AAAACCCC]
-						encoded[2], // second data byte [CCSSSSSS]
-						encoded[3]) // third data byte  [EEEEEEEE]
+					code := ace.Encode()
 
 					// Validate by decoding and comparing
-					decoded, err := DecodeAppComponentErrorCode(encoded)
+					decoded, err := DecodeAppComponentErrorCode(code)
 					if err != nil {
 						panic(fmt.Sprintf("failed to decode app component code: %v", err))
 					}

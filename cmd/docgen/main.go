@@ -14,6 +14,15 @@ const docTemplate = `# Error Codes Documentation
 
 This document is auto-generated. Do not edit manually.
 
+## Error Code Format
+
+All error codes follow the format: E<type><data> where:
+- E: Fixed prefix identifying this as an error code
+- type: Single base-36 character (0-9,A-Z) identifying the error code format
+- data: Variable-length base-36 encoded data specific to each format
+
+Base-36 encoding uses digits 0-9 and letters A-Z to pack more information into fewer characters while remaining human-readable.
+
 {{range .Sections}}
 ## {{.Title}}
 

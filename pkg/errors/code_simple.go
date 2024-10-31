@@ -91,37 +91,54 @@ var SimpleCodeTree = []SimpleClassInfo{
 			},
 		},
 	},
+	{
+		Value:       255,
+		Name:        "max",
+		Description: "Example max value",
+		ErrorTypes: []SimpleErrorInfo{
+			{
+				Value:       255,
+				Name:        "max",
+				Description: "Max error type number",
+			},
+		},
+	},
 }
 
 func (SimpleCode) GetType() CodeType {
 	return CodeTypeSimple
 }
 
-// Encode returns the byte representation of the error code
-func (e SimpleCode) Encode() []byte {
-	result := make([]byte, 3)
+func (e SimpleCode) Encode() string {
+	// Pack into 16 bits:
+	// - 8 bits for Class
+	// - 8 bits for ErrorType
+	packed := uint32(e.Class)<<8 | uint32(e.ErrType)
 
-	result[0] = byte(e.GetType()) // type byte
-	result[1] = byte(e.Class)     // class byte
-	result[2] = byte(e.ErrType)   // error type byte
+	// Convert type and data to base36
+	typeStr := toBase36(uint32(e.GetType()), 1) // 1 char for type
+	dataStr := toBase36(packed, 4)              // 4 chars for 16 bits of data (increased from 3)
 
-	return result
+	return fmt.Sprintf("E%s%s", typeStr, dataStr)
 }
 
-// Decode creates a SimpleCode from a byte slice
-func DecodeSimpleCode(data []byte) (SimpleCode, error) {
-	if len(data) != 3 {
-		return SimpleCode{}, fmt.Errorf("expected 3 bytes, got %d", len(data))
+func DecodeSimpleCode(code string) (SimpleCode, error) {
+	if len(code) != 6 || code[0] != 'E' { // Format: E<type><data> (length now 6 due to 4 chars data)
+		return SimpleCode{}, fmt.Errorf("invalid code format: %s", code)
 	}
 
-	codeType := CodeType(data[0])
-	if codeType != CodeTypeSimple {
-		return SimpleCode{}, fmt.Errorf("invalid code type: %d", codeType)
+	// Parse type
+	typeVal := CodeType(fromBase36(code[1:2]))
+	if typeVal != CodeTypeSimple {
+		return SimpleCode{}, fmt.Errorf("invalid code type: %d", typeVal)
 	}
+
+	// Parse data
+	packed := fromBase36(code[2:])
 
 	return SimpleCode{
-		Class:   ClassCode(data[1]),
-		ErrType: SimpleErrorCode(data[2]),
+		Class:   ClassCode((packed >> 8) & 0xFF),
+		ErrType: SimpleErrorCode(packed & 0xFF),
 	}, nil
 }
 
@@ -145,7 +162,6 @@ func (SimpleCode) GetPrefix() string {
 	return "E"
 }
 
-// GetFieldInfo returns metadata about the code fields
 func (SimpleCode) GetFieldInfo() []FieldInfo {
 	return []FieldInfo{
 		{
@@ -163,7 +179,6 @@ func (SimpleCode) GetFieldInfo() []FieldInfo {
 	}
 }
 
-// Also need to update GetDocSection to include the byte layout diagram
 func (SimpleCode) GetDocSection() DocSection {
 	return DocSection{
 		Title: "Simple Format",
@@ -176,7 +191,12 @@ The format provides:
 - Up to 256 different error types per class
 - Total of 65,536 possible unique error codes
 
-Byte layout:
+The code is encoded as E<type><data> where:
+- E: Fixed prefix
+- type: 1 character in base-36 encoding the error type
+- data: 4 characters in base-36 encoding the class and error type bits
+
+Bit layout before encoding:
 ` + "```" + `
 [CCCCCCCC][EEEEEEEE]
 C: Class bits
@@ -196,17 +216,10 @@ func (SimpleCode) GetPermutations() []Permutation {
 				Class:   class.Value,
 				ErrType: errType.Value,
 			}
-			encoded := sc.Encode()
-
-			// Format code with all bytes needing 2 hex chars
-			code := fmt.Sprintf("%s%02X%02X%02X",
-				sc.GetPrefix(),
-				encoded[0], // type byte
-				encoded[1], // class byte
-				encoded[2]) // error type byte
+			code := sc.Encode()
 
 			// Validate by decoding and comparing
-			decoded, err := DecodeSimpleCode(encoded)
+			decoded, err := DecodeSimpleCode(code)
 			if err != nil {
 				panic(fmt.Sprintf("failed to decode simple code: %v", err))
 			}

@@ -30,7 +30,7 @@ type Permutation struct {
 
 // Interface that all error types must implement
 type ErrorType interface {
-	Encode() []byte
+	Encode() string
 	String() string
 	GetFieldInfo() []FieldInfo
 	GetPermutations() []Permutation

@@ -2,6 +2,15 @@
 
 This document is auto-generated. Do not edit manually.
 
+## Error Code Format
+
+All error codes follow the format: E<type><data> where:
+- E: Fixed prefix identifying this as an error code
+- type: Single base-36 character (0-9,A-Z) identifying the error code format
+- data: Variable-length base-36 encoded data specific to each format
+
+Base-36 encoding uses digits 0-9 and letters A-Z to pack more information into fewer characters while remaining human-readable.
+
 
 ## Simple Format
 
@@ -14,7 +23,12 @@ The format provides:
 - Up to 256 different error types per class
 - Total of 65,536 possible unique error codes
 
-Byte layout:
+The code is encoded as E<type><data> where:
+- E: Fixed prefix
+- type: 1 character in base-36 encoding the error type
+- data: 4 characters in base-36 encoding the class and error type bits
+
+Bit layout before encoding:
 ```
 [CCCCCCCC][EEEEEEEE]
 C: Class bits
@@ -23,19 +37,20 @@ E: ErrorType bits
 
 | Code | Class.Type | Description | 
 |----|----|----|
-| E010000 | unknown.unknown | Unknown API error | 
-| E010100 | api.unknown | Unknown API error | 
-| E010101 | api.validation_error | API validation error | 
-| E010102 | api.authorization_error | API authorization error | 
-| E010200 | jobs.unknown | Unknown job error | 
-| E010201 | jobs.database_query | Database query error in job | 
-| E010202 | jobs.timeout | Job execution timeout | 
+| E10000 | unknown.unknown | Unknown API error | 
+| E10074 | api.unknown | Unknown API error | 
+| E10075 | api.validation_error | API validation error | 
+| E10076 | api.authorization_error | API authorization error | 
+| E100E8 | jobs.unknown | Unknown job error | 
+| E100E9 | jobs.database_query | Database query error in job | 
+| E100EA | jobs.timeout | Job execution timeout | 
+| E11EKF | max.max | Max error type number | 
 
 
 
 ## App Component Format
 
-Each error code is composed of three bytes encoded as follows:
+Each error code is composed of 24 bits of data encoded as follows:
 - App (4 bits): Identifies the application (allows up to 16 apps)
 - Component (6 bits): Identifies the major component (allows up to 64 components per app)
 - SubComponent (6 bits): Identifies the specific sub-component (allows up to 64 sub-components per component)
@@ -48,7 +63,12 @@ The format provides:
 - Up to 256 different error types per sub-component
 - Total of 16,777,216 possible unique error codes (16 * 64 * 64 * 256)
 
-Byte layout:
+The code is encoded as E<type><data> where:
+- E: Fixed prefix
+- type: 1 base-36 character encoding the type (2)
+- data: 5 base-36 characters encoding the packed 24 bits
+
+Bit layout before encoding:
 ```
 [AAAACCCC][CCSSSSSS][EEEEEEEE]
 A: App bits
@@ -59,35 +79,35 @@ E: ErrorType bits
 
 | Code | App.Component.SubComponent.Type | Description | 
 |----|----|----|
-| E02104000 | backend.handler.unknown.unknown | Unknown handler error | 
-| E02104101 | backend.handler.users.validation_error | Input validation failed for user operation | 
-| E02104102 | backend.handler.users.authorization_error | User lacks required permissions for operation | 
-| E02104201 | backend.handler.records.validation_error | Input validation failed for record operation | 
-| E02104202 | backend.handler.records.authorization_error | User lacks required permissions for record operation | 
-| E02104301 | backend.handler.analytics.validation_error | Input validation failed for analytics operation | 
-| E02104302 | backend.handler.analytics.authorization_error | User lacks required permissions for analytics operation | 
-| E02108000 | backend.job.unknown.unknown | Unknown job error | 
-| E02108101 | backend.job.sync.database_error | Database operation failed during sync | 
-| E02108102 | backend.job.sync.external_api_error | External API call failed during sync | 
-| E02108103 | backend.job.sync.timeout | Operation timed out during sync | 
-| E02108201 | backend.job.analytics.database_error | Database operation failed during analytics processing | 
-| E02108202 | backend.job.analytics.external_api_error | External API call failed during analytics processing | 
-| E02108203 | backend.job.analytics.timeout | Operation timed out during analytics processing | 
-| E02204000 | frontend.ui.unknown.unknown | Unknown UI error | 
-| E02204101 | frontend.ui.forms.validation_error | Form validation failed | 
-| E02204102 | frontend.ui.forms.submission_error | Form submission failed | 
-| E02204201 | frontend.ui.routing.not_found | Route not found | 
-| E02204202 | frontend.ui.routing.unauthorized | Route access unauthorized | 
-| E02208000 | frontend.state.unknown.unknown | Unknown state error | 
-| E02208101 | frontend.state.store.update_failed | State update operation failed | 
-| E02208102 | frontend.state.store.invalid_action | Invalid state action dispatched | 
-| E02208201 | frontend.state.persistence.storage_error | Local storage operation failed | 
-| E02208202 | frontend.state.persistence.sync_error | State synchronization failed | 
-| E0220C000 | frontend.api.unknown.unknown | Unknown API error | 
-| E0220C101 | frontend.api.request.network_error | Network request failed | 
-| E0220C102 | frontend.api.request.timeout | Request timed out | 
-| E0220C103 | frontend.api.request.invalid_response | Invalid response received | 
-| E0220C201 | frontend.api.cache.cache_miss | Cache miss error | 
-| E0220C202 | frontend.api.cache.cache_invalid | Cache invalidation error | 
+| E20MTQ8 | backend.handler.unknown.unknown | Unknown handler error | 
+| E20MTXD | backend.handler.users.validation_error | Input validation failed for user operation | 
+| E20MTXE | backend.handler.users.authorization_error | User lacks required permissions for operation | 
+| E20MU4H | backend.handler.records.validation_error | Input validation failed for record operation | 
+| E20MU4I | backend.handler.records.authorization_error | User lacks required permissions for record operation | 
+| E20MUBL | backend.handler.analytics.validation_error | Input validation failed for analytics operation | 
+| E20MUBM | backend.handler.analytics.authorization_error | User lacks required permissions for analytics operation | 
+| E20N6DC | backend.job.unknown.unknown | Unknown job error | 
+| E20N6KH | backend.job.sync.database_error | Database operation failed during sync | 
+| E20N6KI | backend.job.sync.external_api_error | External API call failed during sync | 
+| E20N6KJ | backend.job.sync.timeout | Operation timed out during sync | 
+| E20N6RL | backend.job.analytics.database_error | Database operation failed during analytics processing | 
+| E20N6RM | backend.job.analytics.external_api_error | External API call failed during analytics processing | 
+| E20N6RN | backend.job.analytics.timeout | Operation timed out during analytics processing | 
+| E219ATC | frontend.ui.unknown.unknown | Unknown UI error | 
+| E219B0H | frontend.ui.forms.validation_error | Form validation failed | 
+| E219B0I | frontend.ui.forms.submission_error | Form submission failed | 
+| E219B7L | frontend.ui.routing.not_found | Route not found | 
+| E219B7M | frontend.ui.routing.unauthorized | Route access unauthorized | 
+| E219NGG | frontend.state.unknown.unknown | Unknown state error | 
+| E219NNL | frontend.state.store.update_failed | State update operation failed | 
+| E219NNM | frontend.state.store.invalid_action | Invalid state action dispatched | 
+| E219NUP | frontend.state.persistence.storage_error | Local storage operation failed | 
+| E219NUQ | frontend.state.persistence.sync_error | State synchronization failed | 
+| E21A03K | frontend.api.unknown.unknown | Unknown API error | 
+| E21A0AP | frontend.api.request.network_error | Network request failed | 
+| E21A0AQ | frontend.api.request.timeout | Request timed out | 
+| E21A0AR | frontend.api.request.invalid_response | Invalid response received | 
+| E21A0HT | frontend.api.cache.cache_miss | Cache miss error | 
+| E21A0HU | frontend.api.cache.cache_invalid | Cache invalidation error | 
 
 
