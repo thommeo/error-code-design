@@ -89,7 +89,7 @@ var Simple511CodeTree = []Simple5ClassInfo{
 }
 
 func (Simple511Code) GetType() CodeType {
-	return CodeType(3) // New code type for Simple511
+	return CodeType(CodeTypeSimple511)
 }
 
 func (e Simple511Code) Encode() string {

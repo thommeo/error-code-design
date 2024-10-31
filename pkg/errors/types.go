@@ -6,6 +6,7 @@ type CodeType uint16
 const (
 	CodeTypeTiny         CodeType = 0
 	CodeTypeSimple       CodeType = 1
+	CodeTypeSimple511    CodeType = 3
 	CodeTypeAppComponent CodeType = 10
 )
 
