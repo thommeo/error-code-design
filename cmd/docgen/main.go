@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"sort"
+	"strings"
 	"text/template"
 
 	"github.com/thommeo/error-code-design/pkg/errors"
@@ -13,6 +14,12 @@ import (
 const docTemplate = `# Error Codes Documentation
 
 This document is auto-generated. Do not edit manually.
+
+## Table of Contents
+
+- [Error Code Format](#error-code-format)
+{{range .Sections}}- [{{.Title}}](#{{.Title | anchorID}})
+{{end}}
 
 ## Error Code Format
 
@@ -85,9 +92,32 @@ func getSections() []DocSection {
 	return sections
 }
 
+// Custom template function to convert section titles to anchor IDs
+func anchorID(title string) string {
+	// Simple conversion: lowercase and replace spaces with hyphens
+	// In a real implementation, you might want to handle more cases
+	// like removing special characters, etc.
+	result := ""
+	for _, c := range title {
+		if c == ' ' {
+			result += "-"
+		} else {
+			result += string(c)
+		}
+	}
+	return strings.ToLower(result)
+}
+
 func main() {
 	var buf bytes.Buffer
-	tmpl := template.Must(template.New("doc").Parse(docTemplate))
+
+	// Create template with custom function
+	tmpl := template.New("doc").Funcs(template.FuncMap{
+		"anchorID": anchorID,
+	})
+
+	// Parse template
+	tmpl = template.Must(tmpl.Parse(docTemplate))
 
 	data := DocData{
 		Sections: getSections(),

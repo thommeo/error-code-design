@@ -2,6 +2,15 @@
 
 This document is auto-generated. Do not edit manually.
 
+## Table of Contents
+
+- [Error Code Format](#error-code-format)
+- [Tiny Format](#tiny-format)
+- [Simple Format](#simple-format)
+- [Simple 5-11 Format](#simple-5-11-format)
+- [App Component Format](#app-component-format)
+
+
 ## Error Code Format
 
 All error codes follow the format: E<type><data> where:
